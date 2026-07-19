@@ -7,7 +7,7 @@
 <style>
   :root{
     --azul:#1f4e79; --azul-claro:#dbe9f5; --amarelo:#ffe08a;
-    --verde:#1e8e57; --verde-esc:#166b43; --vermelho:#c0392b; --laranja:#e08a1e;
+    --verde:#1e8e57; --verde-esc:#166b43; --vermelho:#c0392b; --laranja:#e08a1e; --roxo:#5b3fa3;
     --cinza:#eef2f6; --texto:#222; --borda:#cfd8e3;
   }
   *{box-sizing:border-box}
@@ -16,7 +16,7 @@
     background:linear-gradient(160deg,#f4f7fb,#e6eef7); color:var(--texto);
     min-height:100vh; padding:16px;
   }
-  .wrap{max-width:640px; margin:0 auto}
+  .wrap{max-width:660px; margin:0 auto}
   header{
     background:var(--azul); color:#fff; border-radius:14px;
     padding:18px 20px; text-align:center; box-shadow:0 6px 18px rgba(31,78,121,.25);
@@ -33,7 +33,6 @@
     border-radius:9px; background:#fff; color:var(--texto); font-family:inherit;
   }
   select:focus,input:focus,textarea:focus{outline:none; border-color:var(--azul)}
-  select:disabled{background:#f2f2f2; color:#999}
   .campo{margin-bottom:14px}
   .hidden{display:none !important}
   button{
@@ -45,35 +44,36 @@
   .btn-pausa{background:var(--laranja)}
   .btn-parar{background:var(--vermelho)}
   .btn-gravar{background:var(--azul)}
-  .btn-secundario{background:#7a8a9a}
+  .btn-hist{background:var(--roxo); padding:10px; font-size:14px}
   .row{display:flex; gap:10px}
   .row button{flex:1}
-  /* Cronômetro */
   .timer-box{text-align:center; padding:10px 0}
-  .timer{
-    font-size:52px; font-weight:800; color:var(--azul);
-    font-variant-numeric:tabular-nums; letter-spacing:2px;
-  }
+  .timer{font-size:52px; font-weight:800; color:var(--azul); font-variant-numeric:tabular-nums; letter-spacing:2px}
   .timer.pausado{color:var(--laranja)}
   .status-linha{font-size:13px; color:#666; margin-top:2px; min-height:18px}
-  .info-estudo{
-    background:var(--azul-claro); border-radius:9px; padding:10px 12px;
-    font-size:13px; margin-bottom:14px; line-height:1.5;
-  }
+  .info-estudo{background:var(--azul-claro); border-radius:9px; padding:10px 12px; font-size:13px; margin-bottom:14px; line-height:1.5}
   .info-estudo b{color:var(--azul)}
   .questoes-box{display:flex; gap:10px}
   .questoes-box .campo{flex:1; margin-bottom:0}
+  .hist-box{margin-top:12px}
+  .hist-detalhe{background:#f0ecfa; border:1px solid #d9cef2; border-radius:9px; padding:10px 12px; font-size:13px; margin-top:8px; line-height:1.5}
+  .hist-detalhe .hist-data{font-weight:700; color:var(--roxo)}
+  .hint{font-size:12px; color:#777; margin-top:5px}
+  .hint b{color:var(--roxo)}
+  /* Simulado */
+  .sim-lista{border:1px solid var(--borda); border-radius:9px; overflow:hidden}
+  .sim-linha{display:grid; grid-template-columns:1fr 78px 78px; gap:8px; align-items:center; padding:8px 10px; border-bottom:1px solid #eef2f6}
+  .sim-linha:last-child{border-bottom:none}
+  .sim-linha:nth-child(odd){background:#fafcfe}
+  .sim-nome-disc{font-size:13px; font-weight:600; color:var(--texto)}
+  .sim-linha input{padding:7px 8px; font-size:14px; text-align:center}
+  .sim-cab{display:grid; grid-template-columns:1fr 78px 78px; gap:8px; padding:4px 10px 6px; font-size:11px; font-weight:700; color:var(--azul); text-transform:uppercase}
+  .sim-cab span:not(:first-child){text-align:center}
   .msg{padding:11px 13px; border-radius:9px; font-size:14px; margin-top:12px}
   .msg-ok{background:#e3f6ec; color:var(--verde-esc); border:1px solid #b8e6cc}
   .msg-erro{background:#fbe4e2; color:var(--vermelho); border:1px solid #f2c1bc}
-  .msg-info{background:#fff6db; color:#8a6d1e; border:1px solid #f2e2a8}
-  .badge{
-    display:inline-block; background:var(--amarelo); color:#7a5c00;
-    font-size:11px; font-weight:700; padding:1px 7px; border-radius:20px; margin-left:6px;
-  }
   footer{text-align:center; font-size:11px; color:#8a97a6; margin-top:18px}
-  .spinner{display:inline-block; width:14px; height:14px; border:2px solid #fff;
-    border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px}
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -85,8 +85,6 @@
     <p>Prof. Rodrigo Neris · TRT</p>
   </header>
 
-  <!-- CONFIG: cole aqui a URL do seu Web App (Apps Script) -->
-  <!-- Ex.: https://script.google.com/macros/s/AKfyc..../exec -->
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwULqE0BKzATHmhDHoaHMsdPJMmGBl1n2fTacGt1gAuIX0oPmkOXU_7z8s7yFLNSDud/exec";
   </script>
@@ -95,19 +93,20 @@
   <div class="card" id="cardSelecao">
     <div class="campo">
       <label for="disciplina">1 · Disciplina</label>
-      <select id="disciplina">
-        <option value="">Carregando disciplinas…</option>
-      </select>
+      <select id="disciplina"><option value="">Carregando disciplinas…</option></select>
     </div>
 
     <div class="campo hidden" id="campoConteudo">
       <label for="conteudo">2 · Conteúdo</label>
-      <select id="conteudo">
-        <option value="">Selecione a disciplina primeiro</option>
-      </select>
+      <select id="conteudo"><option value="">Selecione a disciplina primeiro</option></select>
     </div>
 
-    <button class="btn-estudar hidden" id="btnEstudar">▶ Estudar</button>
+    <div class="hist-box hidden" id="histBox">
+      <button class="btn-hist" id="btnHist">🕘 Histórico (última atividade)</button>
+      <div class="hist-detalhe hidden" id="histDetalhe"></div>
+    </div>
+
+    <button class="btn-estudar hidden" id="btnEstudar" style="margin-top:12px">▶ Estudar</button>
   </div>
 
   <!-- CRONÔMETRO -->
@@ -140,6 +139,7 @@
       </select>
     </div>
 
+    <!-- Questões -->
     <div class="questoes-box hidden" id="boxQuestoes">
       <div class="campo">
         <label for="feitas">Feitas</label>
@@ -151,267 +151,283 @@
       </div>
     </div>
 
-    <div class="campo">
+    <!-- Simulado -->
+    <div class="hidden" id="boxSimulado">
+      <div class="campo">
+        <label for="nomeSimulado">Nome do simulado</label>
+        <input type="text" id="nomeSimulado" placeholder="Ex.: Simulado 01">
+        <div class="hint" id="ultSimHint"></div>
+      </div>
+      <label>Resultados por disciplina</label>
+      <div class="sim-cab"><span>Disciplina</span><span>Feitas</span><span>Acertos</span></div>
+      <div class="sim-lista" id="simLista"></div>
+    </div>
+
+    <!-- Comentário (oculto no Simulado) -->
+    <div class="campo" id="campoComentario">
       <label for="comentario">Complemento <span style="font-weight:400;color:#888">(opcional)</span></label>
-      <textarea id="comentario" rows="2" placeholder="Ex.: capítulo 3, banca FCC, dificuldade média…"></textarea>
+      <textarea id="comentario" rows="2" placeholder="Ex.: capítulo 3, banca FCC, parei na página 40…"></textarea>
     </div>
 
     <button class="btn-gravar" id="btnGravar">💾 Gravar</button>
     <div id="msg"></div>
   </div>
 
-  <footer>Os dados são salvos na sua Planilha Google e no registro.csv (Drive).</footer>
+  <footer>Sessões → registro.csv · Simulados → simulado.csv · Questões → Planilha Google</footer>
 </div>
 
 <script>
 /* ====================== ESTADO ====================== */
-let conteudosCache = [];   // lista da disciplina atual
+let disciplinasCache = [];
+let conteudosCache = [];
 let conteudoSelecionado = null;
 
-let t0 = null;             // início (ms)
-let tPauseStart = null;    // início da pausa atual (ms)
-let pausaAcumMs = 0;       // total pausado (ms)
-let pausado = false;
-let tickInterval = null;
-let sessao = null;         // {inicioDate, ...} guardado ao parar
+let t0=null, tPauseStart=null, pausaAcumMs=0, pausado=false, tickInterval=null;
+let sessao=null;
 
-/* ====================== HELPERS ====================== */
 const $ = id => document.getElementById(id);
 
 function api(params){
-  const url = API_URL + '?' + new URLSearchParams(params).toString();
-  return fetch(url, {method:'GET'}).then(r => r.json());
+  return fetch(API_URL + '?' + new URLSearchParams(params).toString(), {method:'GET'}).then(r=>r.json());
 }
 function apiPost(dados){
-  // text/plain evita preflight CORS no Apps Script
-  return fetch(API_URL, {method:'POST', body: JSON.stringify(dados)}).then(r => r.json());
+  return fetch(API_URL, {method:'POST', body: JSON.stringify(dados)}).then(r=>r.json());
 }
 function fmt2(n){return String(n).padStart(2,'0');}
 function msParaHMS(ms){
-  let s = Math.max(0, Math.floor(ms/1000));
-  const h = Math.floor(s/3600); s -= h*3600;
-  const m = Math.floor(s/60);   s -= m*60;
+  let s=Math.max(0,Math.floor(ms/1000));
+  const h=Math.floor(s/3600); s-=h*3600;
+  const m=Math.floor(s/60);   s-=m*60;
   return fmt2(h)+':'+fmt2(m)+':'+fmt2(s);
 }
-function horaLocal(d){
-  return fmt2(d.getHours())+':'+fmt2(d.getMinutes())+':'+fmt2(d.getSeconds());
-}
-function dataLocal(d){
-  return d.getFullYear()+'-'+fmt2(d.getMonth()+1)+'-'+fmt2(d.getDate());
-}
+function horaLocal(d){return fmt2(d.getHours())+':'+fmt2(d.getMinutes())+':'+fmt2(d.getSeconds());}
+function dataLocal(d){return d.getFullYear()+'-'+fmt2(d.getMonth()+1)+'-'+fmt2(d.getDate());}
 
-/* ====================== CARREGAR DISCIPLINAS ====================== */
+/* ====================== DISCIPLINAS ====================== */
 async function carregarDisciplinas(){
-  const sel = $('disciplina');
-  if(API_URL.indexOf('COLE_AQUI') === 0){
-    sel.innerHTML = '<option value="">⚠ Configure a API_URL no index.html</option>';
-    return;
+  const sel=$('disciplina');
+  if(API_URL.indexOf('COLE_AQUI')===0){
+    sel.innerHTML='<option value="">⚠ Configure a API_URL</option>'; return;
   }
   try{
-    const r = await api({action:'disciplinas'});
+    const r=await api({action:'disciplinas'});
     if(!r.ok) throw new Error(r.erro);
-    sel.innerHTML = '<option value="">Selecione…</option>';
+    disciplinasCache=r.disciplinas;
+    sel.innerHTML='<option value="">Selecione…</option>';
     r.disciplinas.forEach(nome=>{
-      const o = document.createElement('option');
-      o.value = nome; o.textContent = nome;
-      sel.appendChild(o);
+      const o=document.createElement('option'); o.value=nome; o.textContent=nome; sel.appendChild(o);
     });
-  }catch(e){
-    sel.innerHTML = '<option value="">Erro ao carregar</option>';
-    alert('Não consegui carregar as disciplinas.\n'+e.message);
-  }
+  }catch(e){ sel.innerHTML='<option value="">Erro ao carregar</option>'; alert('Erro nas disciplinas.\n'+e.message); }
 }
 
-/* ====================== CARREGAR CONTEÚDOS ====================== */
+/* ====================== CONTEÚDOS ====================== */
 async function carregarConteudos(disciplina){
-  const sel = $('conteudo');
-  sel.innerHTML = '<option value="">Carregando…</option>';
+  const sel=$('conteudo');
+  sel.innerHTML='<option value="">Carregando…</option>';
   $('campoConteudo').classList.remove('hidden');
   $('btnEstudar').classList.add('hidden');
+  esconderHistorico();
   try{
-    const r = await api({action:'conteudos', disciplina});
+    const r=await api({action:'conteudos', disciplina});
     if(!r.ok) throw new Error(r.erro);
-    conteudosCache = r.conteudos;
-    sel.innerHTML = '<option value="">Selecione o conteúdo…</option>';
+    conteudosCache=r.conteudos;
+    sel.innerHTML='<option value="">Selecione o conteúdo…</option>';
     r.conteudos.forEach((c,i)=>{
-      const o = document.createElement('option');
-      o.value = i;
-      const ident = '    '.repeat(c.nivel); // recuo visual
-      const banco = c.banco ? '  ('+c.banco+')' : '';
-      const identNbsp = '    '.repeat(c.nivel); // recuo com espaço fixo
-      o.textContent = identNbsp + c.texto + banco;
+      const o=document.createElement('option'); o.value=i;
+      o.textContent='    '.repeat(c.nivel)+c.texto+(c.banco?'  ('+c.banco+')':'');
       sel.appendChild(o);
     });
-  }catch(e){
-    sel.innerHTML = '<option value="">Erro ao carregar</option>';
-    alert('Não consegui carregar os conteúdos.\n'+e.message);
-  }
+  }catch(e){ sel.innerHTML='<option value="">Erro ao carregar</option>'; alert('Erro nos conteúdos.\n'+e.message); }
+}
+
+/* ====================== HISTÓRICO ====================== */
+function esconderHistorico(){
+  $('histBox').classList.add('hidden');
+  $('histDetalhe').classList.add('hidden');
+  $('histDetalhe').innerHTML='';
+}
+async function carregarHistorico(disciplina, conteudo){
+  esconderHistorico();
+  try{
+    const r=await api({action:'ultimoRegistro', disciplina, conteudo});
+    if(r.ok && r.registro && r.registro.comentario){
+      $('histDetalhe').innerHTML=
+        '<span class="hist-data">📅 '+r.registro.data+'</span> — '+r.registro.comentario;
+      $('histBox').classList.remove('hidden'); // só aparece se houver comentário
+    }
+  }catch(e){ /* silencioso */ }
 }
 
 /* ====================== CRONÔMETRO ====================== */
 function tick(){
-  if(pausado){
-    $('display').textContent = msParaHMS(tPauseStart - t0 - pausaAcumMs);
-    return;
-  }
-  $('display').textContent = msParaHMS(Date.now() - t0 - pausaAcumMs);
+  if(pausado){ $('display').textContent=msParaHMS(tPauseStart-t0-pausaAcumMs); return; }
+  $('display').textContent=msParaHMS(Date.now()-t0-pausaAcumMs);
 }
-
 function iniciarEstudo(){
-  const d = $('disciplina').value;
-  const c = conteudoSelecionado;
-  sessao = { disciplina:d, conteudo:c.texto, row:c.row };
-
-  t0 = Date.now(); pausaAcumMs = 0; tPauseStart = null; pausado = false;
-  sessao.inicioDate = new Date();
-
-  $('infoEstudo').innerHTML = '<b>'+d+'</b><br>'+c.texto;
-  $('display').textContent = '00:00:00';
-  $('display').classList.remove('pausado');
-  $('statusLinha').textContent = 'Estudando…';
-  $('btnPausa').textContent = '⏸ Pausar';
-
+  const d=$('disciplina').value, c=conteudoSelecionado;
+  sessao={disciplina:d, conteudo:c.texto, row:c.row};
+  t0=Date.now(); pausaAcumMs=0; tPauseStart=null; pausado=false;
+  sessao.inicioDate=new Date();
+  $('infoEstudo').innerHTML='<b>'+d+'</b><br>'+c.texto;
+  $('display').textContent='00:00:00'; $('display').classList.remove('pausado');
+  $('statusLinha').textContent='Estudando…'; $('btnPausa').textContent='⏸ Pausar';
   $('cardSelecao').classList.add('hidden');
   $('cardTimer').classList.remove('hidden');
-  tickInterval = setInterval(tick, 250);
+  tickInterval=setInterval(tick,250);
 }
-
 function alternarPausa(){
   if(!pausado){
-    pausado = true; tPauseStart = Date.now();
-    $('display').classList.add('pausado');
-    $('statusLinha').textContent = '⏸ Pausado';
-    $('btnPausa').textContent = '▶ Retomar';
+    pausado=true; tPauseStart=Date.now();
+    $('display').classList.add('pausado'); $('statusLinha').textContent='⏸ Pausado'; $('btnPausa').textContent='▶ Retomar';
   }else{
-    pausado = false;
-    pausaAcumMs += Date.now() - tPauseStart;
-    tPauseStart = null;
-    $('display').classList.remove('pausado');
-    $('statusLinha').textContent = 'Estudando…';
-    $('btnPausa').textContent = '⏸ Pausar';
+    pausado=false; pausaAcumMs+=Date.now()-tPauseStart; tPauseStart=null;
+    $('display').classList.remove('pausado'); $('statusLinha').textContent='Estudando…'; $('btnPausa').textContent='⏸ Pausar';
   }
 }
-
 function pararEstudo(){
-  if(pausado){ pausaAcumMs += Date.now() - tPauseStart; pausado = false; }
+  if(pausado){ pausaAcumMs+=Date.now()-tPauseStart; pausado=false; }
   clearInterval(tickInterval);
-  const fimDate = new Date();
-  const totalMs = fimDate.getTime() - t0 - pausaAcumMs;
+  const fim=new Date(); const totalMs=fim.getTime()-t0-pausaAcumMs;
+  sessao.fimDate=fim;
+  sessao.pausaSeg=Math.round(pausaAcumMs/1000); sessao.pausaFmt=msParaHMS(pausaAcumMs);
+  sessao.totalSeg=Math.max(0,Math.round(totalMs/1000)); sessao.totalFmt=msParaHMS(totalMs);
 
-  sessao.fimDate  = fimDate;
-  sessao.pausaSeg = Math.round(pausaAcumMs/1000);
-  sessao.pausaFmt = msParaHMS(pausaAcumMs);
-  sessao.totalSeg = Math.max(0, Math.round(totalMs/1000));
-  sessao.totalFmt = msParaHMS(totalMs);
-
-  $('infoForm').innerHTML =
-    '<b>'+sessao.disciplina+'</b><br>'+sessao.conteudo+
-    '<br>⏱ Tempo líquido: <b>'+sessao.totalFmt+'</b>'+
-    (sessao.pausaSeg>0 ? '  ·  Pausa: '+sessao.pausaFmt : '');
+  $('infoForm').innerHTML='<b>'+sessao.disciplina+'</b><br>'+sessao.conteudo+
+    '<br>⏱ Tempo líquido: <b>'+sessao.totalFmt+'</b>'+(sessao.pausaSeg>0?'  ·  Pausa: '+sessao.pausaFmt:'');
 
   // reset form
-  $('tipo').value = ''; $('comentario').value = '';
-  $('feitas').value = ''; $('acertos').value = '';
+  $('tipo').value=''; $('comentario').value=''; $('feitas').value=''; $('acertos').value='';
+  $('nomeSimulado').value=''; $('ultSimHint').innerHTML=''; $('simLista').innerHTML='';
   $('boxQuestoes').classList.add('hidden');
-  $('msg').innerHTML = '';
+  $('boxSimulado').classList.add('hidden');
+  $('campoComentario').classList.remove('hidden');
+  $('msg').innerHTML='';
 
   $('cardTimer').classList.add('hidden');
   $('cardForm').classList.remove('hidden');
 }
 
+/* ====================== TIPO DE ESTUDO ====================== */
+function montarSimulado(){
+  const cont=$('simLista'); cont.innerHTML='';
+  disciplinasCache.forEach((disc,i)=>{
+    const linha=document.createElement('div'); linha.className='sim-linha';
+    linha.innerHTML=
+      '<span class="sim-nome-disc">'+disc+'</span>'+
+      '<input type="number" min="0" inputmode="numeric" placeholder="0" id="simF_'+i+'">'+
+      '<input type="number" min="0" inputmode="numeric" placeholder="0" id="simA_'+i+'">';
+    cont.appendChild(linha);
+  });
+}
+async function carregarUltimoSimulado(){
+  $('ultSimHint').innerHTML='';
+  try{
+    const r=await api({action:'ultimoSimulado'});
+    if(r.ok && r.nome){
+      $('ultSimHint').innerHTML='Último simulado: <b>'+r.nome+'</b>';
+      if(!$('nomeSimulado').value) $('nomeSimulado').value=r.nome;
+    }
+  }catch(e){ /* silencioso */ }
+}
+function aoMudarTipo(){
+  const tipo=$('tipo').value;
+  const ehQuestoes=(tipo==='Questões');
+  const ehSimulado=(tipo==='Simulado');
+  $('boxQuestoes').classList.toggle('hidden', !ehQuestoes);
+  $('boxSimulado').classList.toggle('hidden', !ehSimulado);
+  $('campoComentario').classList.toggle('hidden', ehSimulado); // sem comentário no simulado
+  if(ehSimulado){ montarSimulado(); carregarUltimoSimulado(); }
+}
+
 /* ====================== GRAVAR ====================== */
 async function gravar(){
-  const tipo = $('tipo').value;
+  const tipo=$('tipo').value;
   if(!tipo){ mostrarMsg('Selecione o tipo de estudo.','erro'); return; }
 
-  let feitas=null, acertos=null;
-  if(tipo === 'Questões'){
-    feitas  = parseInt($('feitas').value,10);
-    acertos = parseInt($('acertos').value,10);
-    if(isNaN(feitas) || isNaN(acertos)){
-      mostrarMsg('Preencha Feitas e Acertos.','erro'); return;
+  let payload;
+  if(tipo==='Simulado'){
+    const nome=$('nomeSimulado').value.trim();
+    if(!nome){ mostrarMsg('Informe o nome do simulado.','erro'); return; }
+    const resultados=[]; let algum=false;
+    disciplinasCache.forEach((disc,i)=>{
+      const f=$('simF_'+i).value.trim(), a=$('simA_'+i).value.trim();
+      if(f!=='' || a!==''){
+        if(f!=='' && a!=='' && parseInt(a,10)>parseInt(f,10)){ algum='erro'; }
+      }
+      resultados.push({disciplina:disc, feitas:f, acertos:a});
+      if(f!=='' || a!=='') algum=(algum==='erro')?'erro':true;
+    });
+    if(algum==='erro'){ mostrarMsg('Em alguma disciplina, Acertos ficou maior que Feitas.','erro'); return; }
+    if(!algum){ mostrarMsg('Preencha ao menos uma disciplina.','erro'); return; }
+    payload={
+      acao:'simulado', nomeSimulado:nome,
+      data:dataLocal(sessao.inicioDate), inicio:horaLocal(sessao.inicioDate), fim:horaLocal(sessao.fimDate),
+      totalFmt:sessao.totalFmt, resultados:resultados
+    };
+  }else{
+    let feitas=null, acertos=null;
+    if(tipo==='Questões'){
+      feitas=parseInt($('feitas').value,10); acertos=parseInt($('acertos').value,10);
+      if(isNaN(feitas)||isNaN(acertos)){ mostrarMsg('Preencha Feitas e Acertos.','erro'); return; }
+      if(acertos>feitas){ mostrarMsg('Acertos não pode ser maior que Feitas.','erro'); return; }
     }
-    if(acertos > feitas){
-      mostrarMsg('Acertos não pode ser maior que Feitas.','erro'); return;
-    }
+    payload={
+      data:dataLocal(sessao.inicioDate), disciplina:sessao.disciplina, conteudo:sessao.conteudo, row:sessao.row,
+      tipo:tipo, inicio:horaLocal(sessao.inicioDate), fim:horaLocal(sessao.fimDate),
+      pausaSeg:sessao.pausaSeg, pausaFmt:sessao.pausaFmt, totalSeg:sessao.totalSeg, totalFmt:sessao.totalFmt,
+      feitas:feitas, acertos:acertos, comentario:$('comentario').value.trim()
+    };
   }
 
-  const payload = {
-    data: dataLocal(sessao.inicioDate),
-    disciplina: sessao.disciplina,
-    conteudo: sessao.conteudo,
-    row: sessao.row,
-    tipo: tipo,
-    inicio: horaLocal(sessao.inicioDate),
-    fim: horaLocal(sessao.fimDate),
-    pausaSeg: sessao.pausaSeg,
-    pausaFmt: sessao.pausaFmt,
-    totalSeg: sessao.totalSeg,
-    totalFmt: sessao.totalFmt,
-    feitas: feitas,
-    acertos: acertos,
-    comentario: $('comentario').value.trim()
-  };
-
-  const btn = $('btnGravar');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Gravando…';
+  const btn=$('btnGravar'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Gravando…';
   try{
-    const r = await apiPost(payload);
+    const r=await apiPost(payload);
     if(!r.ok) throw new Error(r.erro);
-    mostrarMsg('✅ Registrado! ' +
-      (tipo==='Questões' ? ('Planilha: '+r.resultado.planilha+'. ') : '') +
-      'Sessão salva no registro.csv.','ok');
-    setTimeout(reiniciar, 1400);
-  }catch(e){
-    mostrarMsg('Erro ao gravar: '+e.message,'erro');
-  }finally{
-    btn.disabled = false;
-    btn.innerHTML = '💾 Gravar';
-  }
+    if(tipo==='Simulado'){
+      mostrarMsg('✅ Simulado "'+r.resultado.simulado+'" salvo ('+r.resultado.linhas+' disciplinas) no simulado.csv.','ok');
+    }else{
+      mostrarMsg('✅ Registrado! '+(tipo==='Questões'?('Planilha: '+r.resultado.planilha+'. '):'')+'Sessão no registro.csv.','ok');
+    }
+    setTimeout(reiniciar,1600);
+  }catch(e){ mostrarMsg('Erro ao gravar: '+e.message,'erro'); }
+  finally{ btn.disabled=false; btn.innerHTML='💾 Gravar'; }
 }
 
-function mostrarMsg(txt,tipo){
-  $('msg').innerHTML = '<div class="msg msg-'+tipo+'">'+txt+'</div>';
-}
+function mostrarMsg(txt,tipo){ $('msg').innerHTML='<div class="msg msg-'+tipo+'">'+txt+'</div>'; }
 
 function reiniciar(){
-  sessao = null; conteudoSelecionado = null;
+  sessao=null; conteudoSelecionado=null;
   $('cardForm').classList.add('hidden');
   $('cardSelecao').classList.remove('hidden');
-  $('conteudo').value = '';
-  $('conteudo').innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+  $('conteudo').value=''; $('conteudo').innerHTML='<option value="">Selecione a disciplina primeiro</option>';
   $('campoConteudo').classList.add('hidden');
   $('btnEstudar').classList.add('hidden');
-  $('disciplina').value = '';
+  esconderHistorico();
+  $('disciplina').value='';
 }
 
 /* ====================== EVENTOS ====================== */
 $('disciplina').addEventListener('change', e=>{
-  conteudoSelecionado = null;
-  $('btnEstudar').classList.add('hidden');
+  conteudoSelecionado=null; $('btnEstudar').classList.add('hidden'); esconderHistorico();
   if(e.target.value) carregarConteudos(e.target.value);
   else $('campoConteudo').classList.add('hidden');
 });
-
 $('conteudo').addEventListener('change', e=>{
-  if(e.target.value !== ''){
-    conteudoSelecionado = conteudosCache[parseInt(e.target.value,10)];
+  esconderHistorico();
+  if(e.target.value!==''){
+    conteudoSelecionado=conteudosCache[parseInt(e.target.value,10)];
     $('btnEstudar').classList.remove('hidden');
+    carregarHistorico($('disciplina').value, conteudoSelecionado.texto);
   }else{
-    conteudoSelecionado = null;
-    $('btnEstudar').classList.add('hidden');
+    conteudoSelecionado=null; $('btnEstudar').classList.add('hidden');
   }
 });
-
+$('btnHist').addEventListener('click', ()=>{ $('histDetalhe').classList.toggle('hidden'); });
 $('btnEstudar').addEventListener('click', iniciarEstudo);
 $('btnPausa').addEventListener('click', alternarPausa);
 $('btnParar').addEventListener('click', pararEstudo);
 $('btnGravar').addEventListener('click', gravar);
-
-$('tipo').addEventListener('change', e=>{
-  $('boxQuestoes').classList.toggle('hidden', e.target.value !== 'Questões');
-});
+$('tipo').addEventListener('change', aoMudarTipo);
 
 /* ====================== INÍCIO ====================== */
 carregarDisciplinas();
