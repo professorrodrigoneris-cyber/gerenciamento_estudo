@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Estudos — Prof. Rodrigo Neris</title>
+<style>
+  :root{
+    --azul:#1f4e79; --azul-claro:#dbe9f5; --amarelo:#ffe08a;
+    --verde:#1e8e57; --verde-esc:#166b43; --vermelho:#c0392b; --laranja:#e08a1e;
+    --cinza:#eef2f6; --texto:#222; --borda:#cfd8e3;
+  }
+  *{box-sizing:border-box}
+  body{
+    font-family:'Segoe UI',system-ui,Arial,sans-serif; margin:0;
+    background:linear-gradient(160deg,#f4f7fb,#e6eef7); color:var(--texto);
+    min-height:100vh; padding:16px;
+  }
+  .wrap{max-width:640px; margin:0 auto}
+  header{
+    background:var(--azul); color:#fff; border-radius:14px;
+    padding:18px 20px; text-align:center; box-shadow:0 6px 18px rgba(31,78,121,.25);
+  }
+  header h1{margin:0; font-size:20px; letter-spacing:.3px}
+  header p{margin:4px 0 0; font-size:12px; opacity:.85}
+  .card{
+    background:#fff; border-radius:14px; padding:18px; margin-top:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06); border:1px solid var(--borda);
+  }
+  label{display:block; font-weight:600; font-size:14px; margin-bottom:6px; color:var(--azul)}
+  select,input,textarea{
+    width:100%; padding:11px 12px; font-size:15px; border:1.5px solid var(--borda);
+    border-radius:9px; background:#fff; color:var(--texto); font-family:inherit;
+  }
+  select:focus,input:focus,textarea:focus{outline:none; border-color:var(--azul)}
+  select:disabled{background:#f2f2f2; color:#999}
+  .campo{margin-bottom:14px}
+  .hidden{display:none !important}
+  button{
+    width:100%; padding:14px; font-size:16px; font-weight:700; border:none;
+    border-radius:11px; cursor:pointer; color:#fff; transition:transform .05s, filter .2s;
+  }
+  button:active{transform:scale(.98)}
+  .btn-estudar{background:var(--verde)}
+  .btn-pausa{background:var(--laranja)}
+  .btn-parar{background:var(--vermelho)}
+  .btn-gravar{background:var(--azul)}
+  .btn-secundario{background:#7a8a9a}
+  .row{display:flex; gap:10px}
+  .row button{flex:1}
+  /* Cronômetro */
+  .timer-box{text-align:center; padding:10px 0}
+  .timer{
+    font-size:52px; font-weight:800; color:var(--azul);
+    font-variant-numeric:tabular-nums; letter-spacing:2px;
+  }
+  .timer.pausado{color:var(--laranja)}
+  .status-linha{font-size:13px; color:#666; margin-top:2px; min-height:18px}
+  .info-estudo{
+    background:var(--azul-claro); border-radius:9px; padding:10px 12px;
+    font-size:13px; margin-bottom:14px; line-height:1.5;
+  }
+  .info-estudo b{color:var(--azul)}
+  .questoes-box{display:flex; gap:10px}
+  .questoes-box .campo{flex:1; margin-bottom:0}
+  .msg{padding:11px 13px; border-radius:9px; font-size:14px; margin-top:12px}
+  .msg-ok{background:#e3f6ec; color:var(--verde-esc); border:1px solid #b8e6cc}
+  .msg-erro{background:#fbe4e2; color:var(--vermelho); border:1px solid #f2c1bc}
+  .msg-info{background:#fff6db; color:#8a6d1e; border:1px solid #f2e2a8}
+  .badge{
+    display:inline-block; background:var(--amarelo); color:#7a5c00;
+    font-size:11px; font-weight:700; padding:1px 7px; border-radius:20px; margin-left:6px;
+  }
+  footer{text-align:center; font-size:11px; color:#8a97a6; margin-top:18px}
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid #fff;
+    border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>📚 Controle de Estudos</h1>
+    <p>Prof. Rodrigo Neris · TRT</p>
+  </header>
+
+  <!-- CONFIG: cole aqui a URL do seu Web App (Apps Script) -->
+  <!-- Ex.: https://script.google.com/macros/s/AKfyc..../exec -->
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwULqE0BKzATHmhDHoaHMsdPJMmGBl1n2fTacGt1gAuIX0oPmkOXU_7z8s7yFLNSDud/exec";
+  </script>
+
+  <!-- SELEÇÃO -->
+  <div class="card" id="cardSelecao">
+    <div class="campo">
+      <label for="disciplina">1 · Disciplina</label>
+      <select id="disciplina">
+        <option value="">Carregando disciplinas…</option>
+      </select>
+    </div>
+
+    <div class="campo hidden" id="campoConteudo">
+      <label for="conteudo">2 · Conteúdo</label>
+      <select id="conteudo">
+        <option value="">Selecione a disciplina primeiro</option>
+      </select>
+    </div>
+
+    <button class="btn-estudar hidden" id="btnEstudar">▶ Estudar</button>
+  </div>
+
+  <!-- CRONÔMETRO -->
+  <div class="card hidden" id="cardTimer">
+    <div class="info-estudo" id="infoEstudo"></div>
+    <div class="timer-box">
+      <div class="timer" id="display">00:00:00</div>
+      <div class="status-linha" id="statusLinha">Estudando…</div>
+    </div>
+    <div class="row">
+      <button class="btn-pausa" id="btnPausa">⏸ Pausar</button>
+      <button class="btn-parar" id="btnParar">⏹ Parar</button>
+    </div>
+  </div>
+
+  <!-- FORMULÁRIO FINAL -->
+  <div class="card hidden" id="cardForm">
+    <div class="info-estudo" id="infoForm"></div>
+
+    <div class="campo">
+      <label for="tipo">Tipo de estudo</label>
+      <select id="tipo">
+        <option value="">Selecione…</option>
+        <option>Leitura</option>
+        <option>Questões</option>
+        <option>Resumo</option>
+        <option>Revisão</option>
+        <option>Videoaula</option>
+        <option>Simulado</option>
+      </select>
+    </div>
+
+    <div class="questoes-box hidden" id="boxQuestoes">
+      <div class="campo">
+        <label for="feitas">Feitas</label>
+        <input type="number" id="feitas" min="0" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="campo">
+        <label for="acertos">Acertos</label>
+        <input type="number" id="acertos" min="0" inputmode="numeric" placeholder="0">
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="comentario">Complemento <span style="font-weight:400;color:#888">(opcional)</span></label>
+      <textarea id="comentario" rows="2" placeholder="Ex.: capítulo 3, banca FCC, dificuldade média…"></textarea>
+    </div>
+
+    <button class="btn-gravar" id="btnGravar">💾 Gravar</button>
+    <div id="msg"></div>
+  </div>
+
+  <footer>Os dados são salvos na sua Planilha Google e no registro.csv (Drive).</footer>
+</div>
+
+<script>
+/* ====================== ESTADO ====================== */
+let conteudosCache = [];   // lista da disciplina atual
+let conteudoSelecionado = null;
+
+let t0 = null;             // início (ms)
+let tPauseStart = null;    // início da pausa atual (ms)
+let pausaAcumMs = 0;       // total pausado (ms)
+let pausado = false;
+let tickInterval = null;
+let sessao = null;         // {inicioDate, ...} guardado ao parar
+
+/* ====================== HELPERS ====================== */
+const $ = id => document.getElementById(id);
+
+function api(params){
+  const url = API_URL + '?' + new URLSearchParams(params).toString();
+  return fetch(url, {method:'GET'}).then(r => r.json());
+}
+function apiPost(dados){
+  // text/plain evita preflight CORS no Apps Script
+  return fetch(API_URL, {method:'POST', body: JSON.stringify(dados)}).then(r => r.json());
+}
+function fmt2(n){return String(n).padStart(2,'0');}
+function msParaHMS(ms){
+  let s = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(s/3600); s -= h*3600;
+  const m = Math.floor(s/60);   s -= m*60;
+  return fmt2(h)+':'+fmt2(m)+':'+fmt2(s);
+}
+function horaLocal(d){
+  return fmt2(d.getHours())+':'+fmt2(d.getMinutes())+':'+fmt2(d.getSeconds());
+}
+function dataLocal(d){
+  return d.getFullYear()+'-'+fmt2(d.getMonth()+1)+'-'+fmt2(d.getDate());
+}
+
+/* ====================== CARREGAR DISCIPLINAS ====================== */
+async function carregarDisciplinas(){
+  const sel = $('disciplina');
+  if(API_URL.indexOf('COLE_AQUI') === 0){
+    sel.innerHTML = '<option value="">⚠ Configure a API_URL no index.html</option>';
+    return;
+  }
+  try{
+    const r = await api({action:'disciplinas'});
+    if(!r.ok) throw new Error(r.erro);
+    sel.innerHTML = '<option value="">Selecione…</option>';
+    r.disciplinas.forEach(nome=>{
+      const o = document.createElement('option');
+      o.value = nome; o.textContent = nome;
+      sel.appendChild(o);
+    });
+  }catch(e){
+    sel.innerHTML = '<option value="">Erro ao carregar</option>';
+    alert('Não consegui carregar as disciplinas.\n'+e.message);
+  }
+}
+
+/* ====================== CARREGAR CONTEÚDOS ====================== */
+async function carregarConteudos(disciplina){
+  const sel = $('conteudo');
+  sel.innerHTML = '<option value="">Carregando…</option>';
+  $('campoConteudo').classList.remove('hidden');
+  $('btnEstudar').classList.add('hidden');
+  try{
+    const r = await api({action:'conteudos', disciplina});
+    if(!r.ok) throw new Error(r.erro);
+    conteudosCache = r.conteudos;
+    sel.innerHTML = '<option value="">Selecione o conteúdo…</option>';
+    r.conteudos.forEach((c,i)=>{
+      const o = document.createElement('option');
+      o.value = i;
+      const ident = '    '.repeat(c.nivel); // recuo visual
+      const banco = c.banco ? '  ('+c.banco+')' : '';
+      const identNbsp = '    '.repeat(c.nivel); // recuo com espaço fixo
+      o.textContent = identNbsp + c.texto + banco;
+      sel.appendChild(o);
+    });
+  }catch(e){
+    sel.innerHTML = '<option value="">Erro ao carregar</option>';
+    alert('Não consegui carregar os conteúdos.\n'+e.message);
+  }
+}
+
+/* ====================== CRONÔMETRO ====================== */
+function tick(){
+  if(pausado){
+    $('display').textContent = msParaHMS(tPauseStart - t0 - pausaAcumMs);
+    return;
+  }
+  $('display').textContent = msParaHMS(Date.now() - t0 - pausaAcumMs);
+}
+
+function iniciarEstudo(){
+  const d = $('disciplina').value;
+  const c = conteudoSelecionado;
+  sessao = { disciplina:d, conteudo:c.texto, row:c.row };
+
+  t0 = Date.now(); pausaAcumMs = 0; tPauseStart = null; pausado = false;
+  sessao.inicioDate = new Date();
+
+  $('infoEstudo').innerHTML = '<b>'+d+'</b><br>'+c.texto;
+  $('display').textContent = '00:00:00';
+  $('display').classList.remove('pausado');
+  $('statusLinha').textContent = 'Estudando…';
+  $('btnPausa').textContent = '⏸ Pausar';
+
+  $('cardSelecao').classList.add('hidden');
+  $('cardTimer').classList.remove('hidden');
+  tickInterval = setInterval(tick, 250);
+}
+
+function alternarPausa(){
+  if(!pausado){
+    pausado = true; tPauseStart = Date.now();
+    $('display').classList.add('pausado');
+    $('statusLinha').textContent = '⏸ Pausado';
+    $('btnPausa').textContent = '▶ Retomar';
+  }else{
+    pausado = false;
+    pausaAcumMs += Date.now() - tPauseStart;
+    tPauseStart = null;
+    $('display').classList.remove('pausado');
+    $('statusLinha').textContent = 'Estudando…';
+    $('btnPausa').textContent = '⏸ Pausar';
+  }
+}
+
+function pararEstudo(){
+  if(pausado){ pausaAcumMs += Date.now() - tPauseStart; pausado = false; }
+  clearInterval(tickInterval);
+  const fimDate = new Date();
+  const totalMs = fimDate.getTime() - t0 - pausaAcumMs;
+
+  sessao.fimDate  = fimDate;
+  sessao.pausaSeg = Math.round(pausaAcumMs/1000);
+  sessao.pausaFmt = msParaHMS(pausaAcumMs);
+  sessao.totalSeg = Math.max(0, Math.round(totalMs/1000));
+  sessao.totalFmt = msParaHMS(totalMs);
+
+  $('infoForm').innerHTML =
+    '<b>'+sessao.disciplina+'</b><br>'+sessao.conteudo+
+    '<br>⏱ Tempo líquido: <b>'+sessao.totalFmt+'</b>'+
+    (sessao.pausaSeg>0 ? '  ·  Pausa: '+sessao.pausaFmt : '');
+
+  // reset form
+  $('tipo').value = ''; $('comentario').value = '';
+  $('feitas').value = ''; $('acertos').value = '';
+  $('boxQuestoes').classList.add('hidden');
+  $('msg').innerHTML = '';
+
+  $('cardTimer').classList.add('hidden');
+  $('cardForm').classList.remove('hidden');
+}
+
+/* ====================== GRAVAR ====================== */
+async function gravar(){
+  const tipo = $('tipo').value;
+  if(!tipo){ mostrarMsg('Selecione o tipo de estudo.','erro'); return; }
+
+  let feitas=null, acertos=null;
+  if(tipo === 'Questões'){
+    feitas  = parseInt($('feitas').value,10);
+    acertos = parseInt($('acertos').value,10);
+    if(isNaN(feitas) || isNaN(acertos)){
+      mostrarMsg('Preencha Feitas e Acertos.','erro'); return;
+    }
+    if(acertos > feitas){
+      mostrarMsg('Acertos não pode ser maior que Feitas.','erro'); return;
+    }
+  }
+
+  const payload = {
+    data: dataLocal(sessao.inicioDate),
+    disciplina: sessao.disciplina,
+    conteudo: sessao.conteudo,
+    row: sessao.row,
+    tipo: tipo,
+    inicio: horaLocal(sessao.inicioDate),
+    fim: horaLocal(sessao.fimDate),
+    pausaSeg: sessao.pausaSeg,
+    pausaFmt: sessao.pausaFmt,
+    totalSeg: sessao.totalSeg,
+    totalFmt: sessao.totalFmt,
+    feitas: feitas,
+    acertos: acertos,
+    comentario: $('comentario').value.trim()
+  };
+
+  const btn = $('btnGravar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Gravando…';
+  try{
+    const r = await apiPost(payload);
+    if(!r.ok) throw new Error(r.erro);
+    mostrarMsg('✅ Registrado! ' +
+      (tipo==='Questões' ? ('Planilha: '+r.resultado.planilha+'. ') : '') +
+      'Sessão salva no registro.csv.','ok');
+    setTimeout(reiniciar, 1400);
+  }catch(e){
+    mostrarMsg('Erro ao gravar: '+e.message,'erro');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '💾 Gravar';
+  }
+}
+
+function mostrarMsg(txt,tipo){
+  $('msg').innerHTML = '<div class="msg msg-'+tipo+'">'+txt+'</div>';
+}
+
+function reiniciar(){
+  sessao = null; conteudoSelecionado = null;
+  $('cardForm').classList.add('hidden');
+  $('cardSelecao').classList.remove('hidden');
+  $('conteudo').value = '';
+  $('conteudo').innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+  $('campoConteudo').classList.add('hidden');
+  $('btnEstudar').classList.add('hidden');
+  $('disciplina').value = '';
+}
+
+/* ====================== EVENTOS ====================== */
+$('disciplina').addEventListener('change', e=>{
+  conteudoSelecionado = null;
+  $('btnEstudar').classList.add('hidden');
+  if(e.target.value) carregarConteudos(e.target.value);
+  else $('campoConteudo').classList.add('hidden');
+});
+
+$('conteudo').addEventListener('change', e=>{
+  if(e.target.value !== ''){
+    conteudoSelecionado = conteudosCache[parseInt(e.target.value,10)];
+    $('btnEstudar').classList.remove('hidden');
+  }else{
+    conteudoSelecionado = null;
+    $('btnEstudar').classList.add('hidden');
+  }
+});
+
+$('btnEstudar').addEventListener('click', iniciarEstudo);
+$('btnPausa').addEventListener('click', alternarPausa);
+$('btnParar').addEventListener('click', pararEstudo);
+$('btnGravar').addEventListener('click', gravar);
+
+$('tipo').addEventListener('change', e=>{
+  $('boxQuestoes').classList.toggle('hidden', e.target.value !== 'Questões');
+});
+
+/* ====================== INÍCIO ====================== */
+carregarDisciplinas();
+</script>
+</body>
+</html>
